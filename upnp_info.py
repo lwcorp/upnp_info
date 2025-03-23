@@ -349,7 +349,7 @@ def main(argv):
     
     parse_locations(locations, args.onlyigd, args.onlylocation)
     
-    if args.onlyigd:
+    if len(locations) > 0 and args.onlyigd:
         if not output_data:
           print('[!] Found 0 locations with IGD port mapping available')
         elif not args.onlylocation:
