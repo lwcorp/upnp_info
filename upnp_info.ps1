@@ -4,14 +4,14 @@ using namespace System.Xml
 using namespace System.Collections.Generic
 
 $helpText = @"
-UPnP Discovery and Information Script
+Device Discovery and Information Script
 
 USAGE:
     $(Split-Path -Leaf $PSCommandPath) [OPTIONS]
 
 OPTIONS:
     -h, --help          Show this help message
-    --onlylocation      Only print discovered UPnP locations
+    --onlylocation      Only print discovered locations
     --onlyigd           Only print IGD (Internet Gateway Device) related information
 
 EXAMPLES:
