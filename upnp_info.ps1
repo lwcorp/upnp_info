@@ -12,7 +12,7 @@ USAGE:
 OPTIONS:
     -h, --help          Show this help message
     --onlylocation      Only print discovered locations
-    --onlyigd           Only print IGD (Internet Gateway Device) devices, i.e. UPnP
+    --onlyigd           Only print IGD (Internet Gateway Device), i.e. UPnP
 
 EXAMPLES:
     powershell -ExecutionPolicy Bypass -File $(Split-Path -Leaf $PSCommandPath) --onlylocation
