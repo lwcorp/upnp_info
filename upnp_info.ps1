@@ -294,7 +294,7 @@ elseif ($locations.Count -eq 0) {
 
 Parse-UPnPLocations -locations $locations -OnlyIGD:$OnlyIGD -OnlyLocation:$OnlyLocation
 
-if ($OnlyIGD) {
+if ($locations.Count -gt 0 -and $OnlyIGD) {
     if ($script:outputData.Count -eq 0) {
         Write-Host "[!] Found 0 locations with IGD port mapping available"
     }
