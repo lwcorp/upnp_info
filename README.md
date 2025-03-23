@@ -23,7 +23,7 @@ The script takes no input and is simply executed
 - `--onlylocation`: Only print discovered locations
 - `--onlyigd`: Only print IGD (Internet Gateway Device) devices, i.e. UPnP
 
-The optional parameters can filter the results into just what you may need. For example, `--onlylocation --onlyigd` can be quite helpful to pass to other programs just the XML address of your UpnP devices!
+The optional parameters can filter the results into just what you may need. For example, `--onlylocation --onlyigd` can be quite helpful to pass to other programs just the XML address of your UpnP devices, also known as UPnP Presentation url (with port and XML filename).
 
 ### Implementation
 #### Python
