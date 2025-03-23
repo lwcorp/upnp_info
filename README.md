@@ -1,26 +1,47 @@
-# upnp_info.py
 ## Purpose
-This script was written so that anyone can easily find the UPnP servers on their network. While tools like this have and do exist, none are as simple as downloading a file and executing it via Python.
+This script was written so that anyone can easily find devices on their network. While tools like this have and do exist, none are as simple as downloading a file and executing it.
 
 ## Dependencies
+
+### Python
 This script depends on 'requests'. You can install requests via pip:
 
 ``
 pip install requests
 ``
 
+### PowerShell
+None
+
 ## Usage
-The script takes no input and is simply executed via python:
+The script takes no input and is simply executed
+### Optional parameters
+``
+[-h|--help] [--onlylocation] [--onlyigd]
+``
+- `-h, --help`: Print help message and usage information
+- `--onlylocation`: Only print discovered locations
+- `--onlyigd`: Only print IGD (Internet Gateway Device) devices, i.e. UPnP
+
+The optional parameters can filter the results into just what you may need. For example, `--onlylocation --onlyigd` can be quite helpful to pass to other programs just the XML address of your UpnP devices!
+
+### Implementation
+#### Python
 
 ``
-python upnp_info.py
+python upnp_info.py [parameters]
+``
+#### PowerShell
+
+``
+powershell -ExecutionPolicy Bypass -File "upnp_info.ps1" [parameters]
 ``
 
 ## Troubleshooting
-upnp_info.py needs to be able access UDP port 1900. If you aren't getting any results but you think you should be then check your firewall.
+The script needs to be able access UDP port 1900. If you aren't getting any results but you think you should be then check your firewall.
 
 ## Features
-upnp_info.py discovers all UPnP servers within multicast range
+The script discovers all UPnP servers within multicast range
 
 ```
 $ python upnp_info.py 
@@ -84,6 +105,3 @@ It can show port mappings:
 [+] IGD port mapping available. Looking up current mappings...
 		[UDP] *:60579 => 192.168.1.186:60579 | Desc: None
 ```
-
-## License
-The license is BSD 3-clause. See the LICENSE file for details.
