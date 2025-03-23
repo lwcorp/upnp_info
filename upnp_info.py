@@ -328,7 +328,7 @@ def find_device_info(location, p_url, p_service):
 def main(argv):
     parser = ArgumentParser(description='Discover devices on the network')
     parser.add_argument('--onlylocation', action='store_true', help='Only print discovered locations')
-    parser.add_argument('--onlyigd', action='store_true', help='Only print IGD related information')
+    parser.add_argument('--onlyigd', action='store_true', help='Only print IGD (Internet Gateway Device) devices, i.e. UPnP')
     args = parser.parse_args()
 
     global output_data
