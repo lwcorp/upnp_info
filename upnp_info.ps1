@@ -44,40 +44,65 @@ function Discover-PnPLocations {
                     "ST: ssdp:all`r`n" +
                     "`r`n"
 
-    $socket = New-Object System.Net.Sockets.Socket([AddressFamily]::InterNetwork, [SocketType]::Dgram, [ProtocolType]::Udp)
-    $socket.SendTimeOut = 3000
-    $socket.ReceiveTimeout = 3000
-    
+    $timeout = 3000
     try {
         $endpoint = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Parse("239.255.255.250"), 1900)
         $bytes = [Encoding]::ASCII.GetBytes($ssdpDiscover)
-        $socket.SendTo($bytes, $endpoint) | Out-Null
+        
+        $ips = [System.Collections.Generic.HashSet[string]]::new()
+        [System.Net.Dns]::GetHostAddresses([System.Net.Dns]::GetHostName()) | 
+            Where-Object { $_.AddressFamily -eq 'InterNetwork' } | 
+            ForEach-Object { $ips.Add($_.IPAddressToString) | Out-Null }
+        $ips.Add('0.0.0.0') | Out-Null
+
+        $sockets = [System.Collections.Generic.List[System.Net.Sockets.Socket]]::new()
+        foreach ($ip in $ips) {
+            try {
+                $sock = New-Object System.Net.Sockets.Socket([AddressFamily]::InterNetwork, [SocketType]::Dgram, [ProtocolType]::Udp)
+                $sock.SendTimeOut = $timeout
+                $sock.ReceiveTimeout = $timeout
+                $sock.Bind((New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Parse($ip), 0)))
+                $sock.SendTo($bytes, $endpoint) | Out-Null
+                $sockets.Add($sock)
+            } catch { }
+        }
         
         $receiveBuffer = New-Object byte[] 1024
         $timer = [System.Diagnostics.Stopwatch]::StartNew()
         
-        while ($timer.ElapsedMilliseconds -lt 3000) {
-            try {
-                $remoteEndpoint = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
-                $endPointRef = [ref]$remoteEndpoint
-                $received = $socket.ReceiveFrom($receiveBuffer, [ref]$remoteEndpoint)
-                $response = [Encoding]::ASCII.GetString($receiveBuffer, 0, $received)
-                
-                $match = $locationRegex.Match($response)
-                if ($match.Success) {
-                    $location = $match.Groups[1].Value
-                    if (-not $locations.Contains($location)) {
-                        $locations.Add($location) | Out-Null
+        while ($sockets.Count -gt 0 -and $timer.ElapsedMilliseconds -lt $timeout) {
+            $readList = [System.Collections.ArrayList]::new($sockets)
+            $timeLeftMicro = [int](($timeout - $timer.ElapsedMilliseconds) * 1000)
+            
+            if ($timeLeftMicro -le 0) { break }
+
+            try { [System.Net.Sockets.Socket]::Select($readList, $null, $null, $timeLeftMicro) } catch { break }
+            
+            if ($readList.Count -eq 0) { continue }
+
+            foreach ($readySock in $readList) {
+                try {
+                    $remoteEndpoint = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
+                    $endPointRef = [ref]$remoteEndpoint
+                    $received = $readySock.ReceiveFrom($receiveBuffer, $endPointRef)
+                    $response = [Encoding]::ASCII.GetString($receiveBuffer, 0, $received)
+                    
+                    $match = $locationRegex.Match($response)
+                    if ($match.Success) {
+                        $location = $match.Groups[1].Value
+                        if (-not $locations.Contains($location)) {
+                            $locations.Add($location) | Out-Null
+                        }
                     }
                 }
-            }
-            catch [System.Net.Sockets.SocketException] {
-                break
+                catch [System.Net.Sockets.SocketException] { }
             }
         }
     }
     finally {
-        $socket.Close()
+        if ($null -ne $sockets) {
+            foreach ($sock in $sockets) { try { $sock.Close() } catch { } }
+        }
     }
     
     return $locations
