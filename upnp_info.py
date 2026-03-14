@@ -2,6 +2,7 @@ import re
 import sys
 import time
 import base64
+import select
 import struct
 import socket
 import requests
@@ -32,16 +33,37 @@ def discover_pnp_locations():
                     'ST: ssdp:all\r\n' +
                     '\r\n')
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.sendto(ssdpDiscover.encode('ASCII'), ("239.255.255.250", 1900))
-    sock.settimeout(3)
-    try:
-        while True:
-            data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-            location_result = location_regex.search(data.decode('ASCII'))
-            if location_result and (location_result.group(1) in locations) == False:
-                locations.add(location_result.group(1))
-    except socket.error:
+    # Grab IPs from all possible adapters
+    _, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    ips.append('0.0.0.0') # Fallback
+    sockets = []
+
+    for ip in set(ips):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.bind((ip, 0))
+            sock.sendto(ssdpDiscover.encode('ASCII'), ("239.255.255.250", 1900))
+            sockets.append(sock)
+        except socket.error:
+            pass
+
+    timeout = 3
+    start_time = time.time()
+    while sockets and (time.time() - start_time) < timeout:
+        # select() monitors all sockets at once for the remaining time
+        ready, _, _ = select.select(sockets, [], [], timeout - (time.time() - start_time))
+        if not ready:
+            break
+        for sock in ready:
+           try:
+                data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+                location_result = location_regex.search(data.decode('ASCII'))
+                if location_result and (location_result.group(1) in locations) == False:
+                    locations.add(location_result.group(1))
+           except socket.error:
+                pass
+
+    for sock in sockets:
         sock.close()
 
     return locations
